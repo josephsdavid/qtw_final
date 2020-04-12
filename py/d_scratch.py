@@ -6,6 +6,20 @@ import csv
 from typing import Dict, Any
 from collections import Counter
 
+from sklearn.metrics import make_scorer
+
+from sklearn.metrics import confusion_matrix
+
+
+def custom_loss(y_true, y_pred):
+    cm = confusion_matrix(y_true, y_pred)
+    weight = np.array([[0, 10], [500, 0]])
+    out = cm * weight
+    return out.sum()
+
+
+slater_loss = make_scorer(custom_loss, greater_is_better=False)
+
 
 def load_data(path):
     """
@@ -45,7 +59,10 @@ def cleanup(d: Dict[str, str]) -> Dict[str, np.ndarray]:
 
 def convert_dollars_percs(x: np.ndarray) -> np.ndarray:
     """replace dollar signs and percentages"""
-    out = [x[i].replace("$", "").replace("%", "").replace("-","") for i in range(x.shape[0])]
+    out = [
+        x[i].replace("$", "").replace("%", "").replace("-", "")
+        for i in range(x.shape[0])
+    ]
     out = np.array([float(z) if _test_value(z) else np.nan for z in out])
     return out
 
@@ -66,7 +83,7 @@ def load_dataset(path: str) -> Dict[str, np.ndarray]:
         data[k] = convert_dollars_percs(data[k])
     # cats are continent, month, day
     cats = [k for k, v in data.items() if not _test_value(v[0])]
-    cats.append('x32')
+    cats.append("x32")
     cont_dict = {"": np.nan}
     for idx, k in enumerate(list(set(data["x24"]))[1:]):
         cont_dict[k] = idx
@@ -97,12 +114,21 @@ def load_dataset(path: str) -> Dict[str, np.ndarray]:
     data = impute_cats(data, cat_dict)
     return data
 
-def plot_corr(df, plot_path='corr_matrix', fig_size=(12,8)):
+
+def plot_corr(df, plot_path="corr_matrix", fig_size=(12, 8)):
     plt.figure(figsize=fig_size)
     # Generate a custom diverging colormap
     cmap = sns.diverging_palette(220, 10, as_cmap=True)
-    sns.heatmap(np.round(df.corr(),3),cmap=cmap ,annot=True, square=True, linewidths=.5, cbar_kws={"shrink": .5})
+    sns.heatmap(
+        np.round(df.corr(), 3),
+        cmap=cmap,
+        annot=True,
+        square=True,
+        linewidths=0.5,
+        cbar_kws={"shrink": 0.5},
+    )
     plt.savefig(plot_path)
+
 
 # src: https://pbpython.com/currency-cleanup.html
 def clean_currency(x):
@@ -110,38 +136,41 @@ def clean_currency(x):
     otherwise, the value is numeric and can be converted
     """
     if isinstance(x, str):
-        return(x.replace('$', '').replace(',', ''))
-    return(float(x))
+        return x.replace("$", "").replace(",", "")
+    return float(x)
 
 
 def p2f(x):
     if isinstance(x, str):
-        return float(x.strip('%'))/100
-    return float(x)/100
+        return float(x.strip("%")) / 100
+    return float(x) / 100
+
 
 # http://blog.davidkaleko.com/feature-engineering-cyclical-features.html
 def cyclical(x, period):
-    s = np.sin(x*(2.*np.pi/period))
-    c = np.cos(x*(2.*np.pi/period))
-    return s,c
+    s = np.sin(x * (2.0 * np.pi / period))
+    c = np.cos(x * (2.0 * np.pi / period))
+    return s, c
+
 
 x = load_dataset("../data/final_project.csv")
-sc = [cyclical(m,5) for m in x['x30']]
-x['x30s']=np.stack(sc,axis=0)[:,0]
-x['x30c']=np.stack(sc,axis=0)[:,1]
-sc = [cyclical(m,12) for m in x['x29']]
-x['x29s']=np.stack(sc,axis=0)[:,0]
-x['x29c']=np.stack(sc,axis=0)[:,1]
+sc = [cyclical(m, 5) for m in x["x30"]]
+x["x30s"] = np.stack(sc, axis=0)[:, 0]
+x["x30c"] = np.stack(sc, axis=0)[:, 1]
+sc = [cyclical(m, 12) for m in x["x29"]]
+x["x29s"] = np.stack(sc, axis=0)[:, 0]
+x["x29c"] = np.stack(sc, axis=0)[:, 1]
 
-y = x.pop('y')
+y = x.pop("y")
 
 y
 
-def categorize_with_asia(d: Dict[str, np.ndarray]) ->Dict[str, np.ndarray]:
-    continent = 'x24'
+
+def categorize_with_asia(d: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    continent = "x24"
     asia = Counter(d[continent]).most_common(1)[0][0]
-    d[continent] = np.array([1. if x == asia else 0. for x in d[continent]])
-    perc = 'x32'
+    d[continent] = np.array([1.0 if x == asia else 0.0 for x in d[continent]])
+    perc = "x32"
     n_percs = np.unique(d[perc]).shape[0]
     enum_dict = dict(zip(np.unique(d[perc]), range(np.unique(d[perc]).shape[0])))
     enum_percs = np.array([enum_dict[x] for x in d[perc]])
@@ -149,36 +178,57 @@ def categorize_with_asia(d: Dict[str, np.ndarray]) ->Dict[str, np.ndarray]:
     return d
 
 
-x_encoded =  categorize_with_asia(x)
+x_encoded = categorize_with_asia(x)
+
+X = np.column_stack(list(x_encoded.values()))
+
+from sklearn.impute import SimpleImputer
+from sklearn.model_selection import train_test_split, cross_val_score, cross_val_predict
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+
+### begin model part 1
+X = SimpleImputer().fit_transform(X)
+y.shape
+
+from sklearn.metrics import accuracy_score
+
+rfc_1 = RandomForestClassifier(n_estimators=300, n_jobs=-1, verbose=2)
+rfc_1_score = cross_val_score(
+    rfc_1, X, y, cv=3, scoring=make_scorer(accuracy_score), n_jobs=-1, verbose=1
+)
+print(rfc_1_score)
 
 
-print({k:np.unique(v).shape[0] for k, v in x.items() if np.unique(v).shape[0] <=50})
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.20, stratify=y, random_state=42
+)
+rf = RandomForestClassifier(n_estimators=300, n_jobs=-1, verbose=2)
+rf.fit(X_train, y_train)
+ppp = rf.predict(X_test)
 
-Counter(x['x24'])
+print(confusion_matrix(y_test, ppp))
 
 
-
-
-
-cat_cols = ['x2','x41','x29','x30']
-
-df = pd.DataFrame(x)
-df = df.drop(['x2','x41','x29','x30'], axis=1)
-
-plot_corr(df, plot_path='corr_matrix_processed',fig_size=(40,35))
-
-from sklearn.metrics import make_scorer
-
-from sklearn.metrics import confusion_matrix
-
-def custom_loss(y_true, y_pred):
-    cm = confusion_matrix(y_true, y_pred)
-    weight = np.array([[0, 10], [500, 0]])
-    out = cm * weight
-    return out.sum()
-
-slater_loss = make_scorer(custom_loss, greater_is_better=False)
-
-custom_loss(y_true = np.array([1,0,1,0,1,0]), y_pred = np.array([1,1,1,0,0,0]))
-
-Counter(y)
+#
+#
+#
+# print({k:np.unique(v).shape[0] for k, v in x.items() if np.unique(v).shape[0] <=50})
+#
+# Counter(x['x24'])
+#
+#
+#
+#
+#
+# cat_cols = ['x2','x41','x29','x30']
+#
+# df = pd.DataFrame(x)
+# df = df.drop(['x2','x41','x29','x30'], axis=1)
+#
+# plot_corr(df, plot_path='corr_matrix_processed',fig_size=(40,35))
+#
+#
+# custom_loss(y_true = np.array([1,0,1,0,1,0]), y_pred = np.array([1,1,1,0,0,0]))
+#
+# Counter(y)
