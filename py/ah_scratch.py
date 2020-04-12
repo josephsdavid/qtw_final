@@ -123,10 +123,11 @@ rfc_1 = RandomForestClassifier()
 y_pred = rfc_1.predict(X_test_sc)
 
 #Custom Loss Function
-slater_loss = make_scorer(custom_loss, greater_is_better=False)
+slater_loss = make_scorer(custom_loss, greater_is_better=True)
+rfc_1_score = cross_val_score(rfc_1, X_test_sc, y_pred, cv=5, scoring = slater_loss)
 
-rfc_1_score = cross_val_score(rfc_1, X_train_sc, y_train, cv=5, scoring = slater_loss)
-
+print("Baseline Random Forrest:")
+print("Custom Cross Validation Score:\n", rfc_1_score)
 
 #%%
 feats = {}
@@ -178,8 +179,13 @@ rfc_2 = RandomForestClassifier()
 %time rfc_2.fit(X_train_sc_pca, y_train)
 
 y_pred_pca = rfc_2.predict(X_test_sc_pca)
-slater_loss= make_scorer(custom_loss, greater_is_better=False)
-rfc_2_score = cross_val_score(rfc_2, X_train_sc_pca, y_train, cv=5, scoring=slater_loss)
+
+# Custom Loss function
+slater_loss= make_scorer(custom_loss, greater_is_better=True)
+rfc_2_score = cross_val_score(rfc_2, X_test_sc_pca, y_pred_pca, cv=5, scoring=slater_loss)
+
+print("\nRandom Forrest w PCA:")
+print("Custom Cross Validation Score:\n", rfc_2_score)
 
 
 #%%
@@ -232,17 +238,17 @@ rfc_2_score = cross_val_score(rfc_2, X_train_sc_pca, y_train, cv=5, scoring=slat
 
 
 #%%
-from sklearn.metrics import make_scorer
-from sklearn.metrics import confusion_matrix
+# from sklearn.metrics import make_scorer
+# from sklearn.metrics import confusion_matrix
 
-# slater_loss_base_rf = custom_loss(y_test, y_pred)
+# # slater_loss_base_rf = custom_loss(y_test, y_pred)
 
 
 
-print("Baseline Random Forrest:\n")
-print("Cross Validation Score:\n", rfc_1_score)
-print("Random Forrest w PCA:\n")
-print("Cross Validation Score:\n", rfc_2_score)
+# print("Baseline Random Forrest:")
+# print("Custom Cross Validation Score:\n", rfc_1_score)
+# print("\nRandom Forrest w PCA:")
+# print("Custom Cross Validation Score:\n", rfc_2_score)
 #Looking at confusion matrix
 
 # conf_M_base = pd.DataFrame(confusion_matrix(y_test, y_pred),
