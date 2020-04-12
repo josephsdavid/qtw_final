@@ -167,6 +167,7 @@ y
 
 
 def categorize_with_asia(d: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    d = d.copy()
     continent = "x24"
     asia = Counter(d[continent]).most_common(1)[0][0]
     d[continent] = np.array([1.0 if x == asia else 0.0 for x in d[continent]])
@@ -175,6 +176,9 @@ def categorize_with_asia(d: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
     enum_dict = dict(zip(np.unique(d[perc]), range(np.unique(d[perc]).shape[0])))
     enum_percs = np.array([enum_dict[x] for x in d[perc]])
     d[perc] = np.eye(n_percs)[enum_percs]
+    to_drop = ['x2','x41','x29','x30']
+    for k in to_drop:
+        d.pop(k, None)
     return d
 
 
@@ -191,11 +195,13 @@ from sklearn.ensemble import RandomForestClassifier
 X = SimpleImputer().fit_transform(X)
 y.shape
 
+np.isnan(X).sum()
+
 from sklearn.metrics import accuracy_score
 
 rfc_1 = RandomForestClassifier(n_estimators=300, n_jobs=-1, verbose=2)
 rfc_1_score = cross_val_score(
-    rfc_1, X, y, cv=3, scoring=make_scorer(accuracy_score), n_jobs=-1, verbose=1
+    rfc_1, X, y, cv=3, scoring=slater_loss, n_jobs=-1, verbose=1
 )
 print(rfc_1_score)
 
@@ -232,3 +238,37 @@ print(confusion_matrix(y_test, ppp))
 # custom_loss(y_true = np.array([1,0,1,0,1,0]), y_pred = np.array([1,1,1,0,0,0]))
 #
 # Counter(y)
+
+def permutation_importances(rf, X_train, y_train, metric):
+    baseline = metric(rf, X_train, y_train)
+    imp = []
+    for i in range(X_train.shape[1]):
+        save = X_train[:,i].copy()
+        X_train[:,i] = np.random.permutation(X_train[:,i])
+        m = metric(rf, X_train, y_train)
+        X_train[:,i] = save
+        imp.append(baseline - m)
+    return np.array(imp)
+
+imps = permutation_importances(rf, X_train, y_train, slater_loss)
+
+imps.shape
+
+for i in range(imps.shape[0]):
+    plt.barh(i, imps[i])
+plt.axvline(imps.mean())
+plt.show()
+
+keep_vars = [i for i in range(imps.shape[0]) if imps[i] > imps.mean()]
+
+
+X_small = X[:,keep_vars].copy()
+
+
+
+rfc_s = RandomForestClassifier(n_estimators=300, n_jobs=-1, verbose=2)
+rfc_s_score = cross_val_score(
+    rfc_s, X_small, y, cv=11, scoring=slater_loss, n_jobs=-1, verbose=1
+)
+print(rfc_s_score)
+
