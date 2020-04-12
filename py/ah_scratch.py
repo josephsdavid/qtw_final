@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
-
+from sklearn.model_selection import RandomizedSearchCV
 from sklearn.decomposition import PCA
 import numpy as np
 import pandas as pd
@@ -108,12 +108,12 @@ y_train = np.array(y_train)
 
 # Baseline RF
 
-rfc = RandomForestClassifier()
-%time rfc.fit(X_train_sc, y_train)
-display(rfc.score(X_train_sc, y_train))
+rfc_1 = RandomForestClassifier()
+%time rfc_1.fit(X_train_sc, y_train)
+display(rfc_1.score(X_train_sc, y_train))
 #%%
 feats = {}
-for feature, importance in zip(df.columns, rfc.feature_importances_):
+for feature, importance in zip(df.columns, rfc_1.feature_importances_):
     feats[feature] = importance
 importances = pd.DataFrame.from_dict(feats, orient='index').rename(columns={0: 'Gini-Importance'})
 importances = importances.sort_values(by='Gini-Importance', ascending=False)
@@ -134,8 +134,6 @@ display(plt.show())
 
 
 #%%
-
-
 # PCA with no components
 
 pca = PCA().fit(X_train_sc)
@@ -153,37 +151,55 @@ plt.axhline(y=0.95, xmin=0, color='r', linestyle='--')
 plt.show()
 
 #%%
-# PCA with 30 components.  Which retains 95% of the variation
+# PCA with 36 components.  Which retains 95% of the variation
 pca = PCA(n_components=36).fit(X_train_sc)
 X_train_sc_pca = pca.transform(X_train_sc)
 X_test_sc_pca = pca.transform(X_test_sc)
 
 # Now rfc on the reduced data
-rfc = RandomForestClassifier()
-%time rfc.fit(X_train_sc_pca, y_train)
-display(rfc.score(X_train_sc_pca, y_train))
-
-
-
-
-#%%
+rfc_2 = RandomForestClassifier()
+%time rfc_2.fit(X_train_sc_pca, y_train)
+display(rfc_2.score(X_train_sc_pca, y_train))
 
 
 #%%
+# Randomized searchCV
+np.random.seed(42)	
+n_estimators = [np.random.randint(10,100) for _ in range(10)]
+min_samples_split = [np.random.randint(2,20) for _ in range(10)]
+min_samples_leaf = [np.random.randint(10,100) for _ in range(10)]
+max_depth = [np.random.randint(1,20) for _ in range(10)]
+max_features = ['log2','sqrt']
+bootstrap = [True,False]
 
-def draw_vector(v0, v1, ax=None):
-    ax = ax or plt.gca()
-    arrowprops=dict(arrowstyle='->',
-                    linewidth=2,
-                    shrinkA=0, shrinkB=0)
-    ax.annotate('', v1, v0, arrowprops=arrowprops)
+param_dict = {'n_estimators':n_estimators,
+				'min_samples_split':min_samples_split,
+				'min_samples_leaf':min_samples_leaf,
+				'max_depth':max_depth,
+				'max_features':max_features,
+				'bootstrap':bootstrap}
 
-# plot data
-plt.scatter(X[:,0], X[:,1], alpha=0.2)
-for length, vector in zip(pca.explained_variance_, pca.components_):
-    v = vector * 3 * np.sqrt(length)
-    draw_vector(pca.mean_, pca.mean_ + v)
-plt.axis('equal')
+rs = RandomizedSearchCV(rfc_2,
+						param_dict,
+						n_iter=50,
+						cv=3,
+						verbose = 1,
+						n_jobs=-1,
+						random_state = 0)
 
-
+%time rs.fit(X_train_sc_pca, y_train)
+rs.best_params_
 # %%
+rs_df = pd.DataFrame(rs.cv_results_).sort_values('rank_test_score').reset_index(drop=True)
+rs_df = rs_df.drop([
+            'mean_fit_time', 
+            'std_fit_time', 
+            'mean_score_time',
+            'std_score_time', 
+            'params', 
+            'split0_test_score', 
+            'split1_test_score', 
+            'split2_test_score', 
+            'std_test_score'],
+            axis=1)
+rs_df.head(10)
