@@ -219,15 +219,15 @@ def custom_loss(y_true, y_pred):
     weight = np.array([[0, 10], [500, 0]])
     out = cm * weight
     return out.sum()
-# slater_loss = make_scorer(custom_loss, greater_is_better=False)
+slater_loss = make_scorer(custom_loss, greater_is_better=False)
 
 #Looking at confusion matrix
 
-conf_M_base = pd.DataFrame(custom_loss(y_test,y_pred),
+conf_M_base = pd.DataFrame(custom_loss(y_test, y_pred),
 							index = ['Actual 0','Actual 1'],
 							columns = ['Predicted 0','Predicted 1'])
 
-conf_M_w_pca = pd.DataFrame(custom_loss(y_test,y_pred_pca),
+conf_M_w_pca = pd.DataFrame(custom_loss(y_test, y_pred_pca),
 							index = ['Actual 0','Actual 1'],
 							columns = ['Predicted 0','Predicted 1'])
 
@@ -235,9 +235,9 @@ conf_M_w_pca = pd.DataFrame(custom_loss(y_test,y_pred_pca),
 # 							index = ['Actual 0','Actual 1'],
 # 							columns = ['Predicted 0','Predicted 1'])
 
-print(conf_M_base)
+print("Baseline Random Forrest:\n",conf_M_base)
 print()
-print(conf_M_w_pca)
+print("Random Forrest w PCA:\n",conf_M_w_pca)
 
 
 
