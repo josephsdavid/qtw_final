@@ -1,5 +1,5 @@
 #%%
-from sklearn.metrics import mean_squared_error, r2_score, recall_score, confusion_matrix
+from sklearn.metrics import mean_squared_error, r2_score, recall_score, confusion_matrix, make_scorer
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
@@ -62,13 +62,13 @@ for col in df.select_dtypes(include=['float64']).columns:
 
 #%%
 #Check numerical histograms of data
-df.hist(bins=50, figsize = (20,15))
+# df.hist(bins=50, figsize = (20,15))
 
-#%%
+# #%%
 
-#heatmap
-plt.figure(figsize=(20,10))
-sns.heatmap(df.corr().round(1),vmax=1, annot=True, cmap = 'YlGnBu',annot_kws={"fontsize":10})
+# #heatmap
+# plt.figure(figsize=(20,10))
+# sns.heatmap(df.corr().round(1),vmax=1, annot=True, cmap = 'YlGnBu',annot_kws={"fontsize":10})
 
 
 #%%
@@ -104,14 +104,30 @@ X_train_sc = scaler.fit_transform(X)
 X_test_sc = scaler.transform(X_test)
 y_train = np.array(y_train)
 
+#Setting up loss function
+def custom_loss(y_true, y_pred):
+    cm = confusion_matrix(y_true, y_pred)
+    weight = np.array([[0, 10], [500, 0]])
+    out = cm * weight
+    return out.sum()
+
+
 #%%
 
 # Baseline RF
-
+#Fit the model
 rfc_1 = RandomForestClassifier()
 %time rfc_1.fit(X_train_sc, y_train)
 # display(rfc_1.score(X_train_sc, y_train))
-rfc_1_score = cross_val_score(rfc_1, X_train_sc, y_train, cv=10)
+# Get predictions
+y_pred = rfc_1.predict(X_test_sc)
+
+#Custom Loss Function
+slater_loss = make_scorer(custom_loss, greater_is_better=False)
+
+rfc_1_score = cross_val_score(rfc_1, X_train_sc, y_train, cv=10, scoring = slater_loss)
+
+
 #%%
 feats = {}
 for feature, importance in zip(df.columns, rfc_1.feature_importances_):
@@ -160,7 +176,10 @@ X_test_sc_pca = pca.transform(X_test_sc)
 # Now rfc on the reduced data
 rfc_2 = RandomForestClassifier()
 %time rfc_2.fit(X_train_sc_pca, y_train)
-rfc_2_score = cross_val_score(rfc_2, X_train_sc_pca, y_train, cv=10)
+
+y_pred_pca = rfc_2.predict(X_test_sc_pca)
+slater_loss= make_scorer(custom_loss, greater_is_better=False)
+rfc_2_score = cross_val_score(rfc_2, X_train_sc_pca, y_train, cv=10, scoring=slater_loss)
 
 
 #%%
@@ -207,28 +226,22 @@ rfc_2_score = cross_val_score(rfc_2, X_train_sc_pca, y_train, cv=10)
 
 #%%
 # Predictions for each model
-y_pred = rfc_1.predict(X_test_sc)
-
-y_pred_pca = rfc_2.predict(X_test_sc_pca)
+# y_pred = rfc_1.predict(X_test_sc)
+# y_pred_pca = rfc_2.predict(X_test_sc_pca)
 # y_pred_rs = rs.best_estimator_.predict(X_test_sc_pca)
 
 
 #%%
 from sklearn.metrics import make_scorer
 from sklearn.metrics import confusion_matrix
-def custom_loss(y_true, y_pred):
-    cm = confusion_matrix(y_true, y_pred)
-    weight = np.array([[0, 10], [500, 0]])
-    out = cm * weight
-    return out.sum()
 
-slater_loss_base_rf = custom_loss(y_test, y_pred)
-slater_loss_PCA_rf = custom_loss(y_test, y_pred_pca)
+# slater_loss_base_rf = custom_loss(y_test, y_pred)
 
 
-print("Baseline Random Forrest:\n",slater_loss_base_rf)
+
+print("Baseline Random Forrest:\n")
 print("Cross Validation Score:\n", rfc_1_score)
-print("Random Forrest w PCA:\n",slater_loss_PCA_rf)
+print("Random Forrest w PCA:\n")
 print("Cross Validation Score:\n", rfc_2_score)
 #Looking at confusion matrix
 
