@@ -1,5 +1,5 @@
 #%%
-from sklearn.metrics import mean_squared_error, r2_score, recall_score
+from sklearn.metrics import mean_squared_error, r2_score, recall_score, confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
@@ -76,7 +76,7 @@ X = df.drop('y', axis = 1)
 y = df['y']
 
 # Splitting the data
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state = 42) #stratify=y
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, stratify=y, random_state = 42)
 
 print("\nChecking shape of test/train data")
 print(X_train.shape)
@@ -163,43 +163,82 @@ display(rfc_2.score(X_train_sc_pca, y_train))
 
 
 #%%
-# Randomized searchCV
-np.random.seed(42)	
-n_estimators = [np.random.randint(10,100) for _ in range(10)]
-min_samples_split = [np.random.randint(2,20) for _ in range(10)]
-min_samples_leaf = [np.random.randint(10,100) for _ in range(10)]
-max_depth = [np.random.randint(1,20) for _ in range(10)]
-max_features = ['log2','sqrt']
-bootstrap = [True,False]
+# # Randomized searchCV
+# np.random.seed(42)	
+# n_estimators = [np.random.randint(10,100) for _ in range(10)]
+# min_samples_split = [np.random.randint(2,20) for _ in range(10)]
+# min_samples_leaf = [np.random.randint(2,20) for _ in range(10)]
+# max_depth = [np.random.randint(1,20) for _ in range(10)]
+# max_features = ['log2','sqrt']
+# bootstrap = [True,False]
 
-param_dict = {'n_estimators':n_estimators,
-				'min_samples_split':min_samples_split,
-				'min_samples_leaf':min_samples_leaf,
-				'max_depth':max_depth,
-				'max_features':max_features,
-				'bootstrap':bootstrap}
+# param_dict = {'n_estimators':n_estimators,
+# 				'min_samples_split':min_samples_split,
+# 				'min_samples_leaf':min_samples_leaf,
+# 				'max_depth':max_depth,
+# 				'max_features':max_features,
+# 				'bootstrap':bootstrap}
 
-rs = RandomizedSearchCV(rfc_2,
-						param_dict,
-						n_iter=50,
-						cv=3,
-						verbose = 1,
-						n_jobs=-1,
-						random_state = 0)
+# rs = RandomizedSearchCV(rfc_2,
+# 						param_dict,
+# 						n_iter=50,
+# 						cv=3,
+# 						verbose = 1,
+# 						n_jobs=-1,
+# 						random_state = 0)
 
-%time rs.fit(X_train_sc_pca, y_train)
-rs.best_params_
+# %time rs.fit(X_train_sc_pca, y_train)
+# rs.best_params_
+# # %%
+# rs_df = pd.DataFrame(rs.cv_results_).sort_values('rank_test_score').reset_index(drop=True)
+# rs_df = rs_df.drop([
+#             'mean_fit_time', 
+#             'std_fit_time', 
+#             'mean_score_time',
+#             'std_score_time', 
+#             'params', 
+#             'split0_test_score', 
+#             'split1_test_score', 
+#             'split2_test_score', 
+#             'std_test_score'],
+#             axis=1)
+# rs_df.head(10)
+
+#%%
+# Predictions for each model
+y_pred = rfc_1.predict(X_test_sc)
+y_pred_pca = rfc_2.predict(X_test_sc_pca)
+# y_pred_rs = rs.best_estimator_.predict(X_test_sc_pca)
+
+
+#%%
+from sklearn.metrics import make_scorer
+from sklearn.metrics import confusion_matrix
+def custom_loss(y_true, y_pred):
+    cm = confusion_matrix(y_true, y_pred)
+    weight = np.array([[0, 10], [500, 0]])
+    out = cm * weight
+    return out.sum()
+# slater_loss = make_scorer(custom_loss, greater_is_better=False)
+
+#Looking at confusion matrix
+
+conf_M_base = pd.DataFrame(custom_loss(y_test,y_pred),
+							index = ['Actual 0','Actual 1'],
+							columns = ['Predicted 0','Predicted 1'])
+
+conf_M_w_pca = pd.DataFrame(custom_loss(y_test,y_pred_pca),
+							index = ['Actual 0','Actual 1'],
+							columns = ['Predicted 0','Predicted 1'])
+
+# conf_M_base = pd.DataFrame(confusion_matrix(y_test,y_pred_rs),
+# 							index = ['Actual 0','Actual 1'],
+# 							columns = ['Predicted 0','Predicted 1'])
+
+print(conf_M_base)
+print()
+print(conf_M_w_pca)
+
+
+
 # %%
-rs_df = pd.DataFrame(rs.cv_results_).sort_values('rank_test_score').reset_index(drop=True)
-rs_df = rs_df.drop([
-            'mean_fit_time', 
-            'std_fit_time', 
-            'mean_score_time',
-            'std_score_time', 
-            'params', 
-            'split0_test_score', 
-            'split1_test_score', 
-            'split2_test_score', 
-            'std_test_score'],
-            axis=1)
-rs_df.head(10)
