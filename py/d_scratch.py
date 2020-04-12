@@ -66,7 +66,7 @@ def load_dataset(path: str) -> Dict[str, np.ndarray]:
         data[k] = convert_dollars_percs(data[k])
     # cats are continent, month, day
     cats = [k for k, v in data.items() if not _test_value(v[0])]
-    cats.append['x32']
+    cats.append('x32')
     cont_dict = {"": np.nan}
     for idx, k in enumerate(list(set(data["x24"]))[1:]):
         cont_dict[k] = idx
@@ -137,12 +137,24 @@ y = x.pop('y')
 
 y
 
-def categorize(d: Dict[str, np.ndarray], thresh: int=100) ->Dict[str, np.ndarray]:
-    k
+def categorize_with_asia(d: Dict[str, np.ndarray]) ->Dict[str, np.ndarray]:
+    continent = 'x24'
+    asia = Counter(d[continent]).most_common(1)[0][0]
+    d[continent] = np.array([1. if x == asia else 0. for x in d[continent]])
+    perc = 'x32'
+    n_percs = np.unique(d[perc]).shape[0]
+    enum_dict = dict(zip(np.unique(d[perc]), range(np.unique(d[perc]).shape[0])))
+    enum_percs = np.array([enum_dict[x] for x in d[perc]])
+    d[perc] = np.eye(n_percs)[enum_percs]
+    return d
 
-print({k:np.unique(v) for k, v in x.items() if np.unique(v).shape[0] <=50})
+
+x_encoded =  categorize_with_asia(x)
 
 
+print({k:np.unique(v).shape[0] for k, v in x.items() if np.unique(v).shape[0] <=50})
+
+Counter(x['x24'])
 
 
 
