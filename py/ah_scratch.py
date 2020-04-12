@@ -3,6 +3,7 @@ from sklearn.metrics import mean_squared_error, r2_score, recall_score, confusio
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.decomposition import PCA
@@ -66,7 +67,7 @@ for col in df.select_dtypes(include=['float64']).columns:
 
 # #%%
 
-# #heatmap
+#heatmap
 # plt.figure(figsize=(20,10))
 # sns.heatmap(df.corr().round(1),vmax=1, annot=True, cmap = 'YlGnBu',annot_kws={"fontsize":10})
 
@@ -74,6 +75,9 @@ for col in df.select_dtypes(include=['float64']).columns:
 #%%
 X = df.drop('y', axis = 1)
 y = df['y']
+
+# Adding in a random noise componenet to test feature importance
+X['Random'] = np.random.random(size=len(X))
 
 # Splitting the data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, stratify=y, random_state = 42)
@@ -92,16 +96,21 @@ print(y_test.shape)
 
 df_pca = X_train.copy()
 y = y_train.copy()
-cat_var = ['day','month','continent']
-#Dropping categorical for scaling
-#Maybe should one-hot encode.
 
+# Drop vars
+cat_var = ['day','month','continent']
+# One hot encoding x32
+
+#Grouping Asias vs Other (europe and america) due to america's small class count
+
+
+# Dropping from xtrain and xtest
 X = df_pca.drop(cat_var, axis=1)
-X_test = X_test.drop(cat_var, axis=1)
+X_test_sc = X_test.drop(cat_var, axis=1)
 
 scaler = StandardScaler()
 X_train_sc = scaler.fit_transform(X)
-X_test_sc = scaler.transform(X_test)
+X_test_sc = scaler.transform(X_test_sc)
 y_train = np.array(y_train)
 
 #Setting up loss function
@@ -115,6 +124,7 @@ def custom_loss(y_true, y_pred):
 #%%
 
 # Baseline RF
+
 #Fit the model
 rfc_1 = RandomForestClassifier()
 %time rfc_1.fit(X_train_sc, y_train)
@@ -131,7 +141,7 @@ print("Custom Cross Validation Score:\n", rfc_1_score)
 
 #%%
 feats = {}
-for feature, importance in zip(df.columns, rfc_1.feature_importances_):
+for feature, importance in zip(X.columns, rfc_1.feature_importances_):
     feats[feature] = importance
 importances = pd.DataFrame.from_dict(feats, orient='index').rename(columns={0: 'Gini-Importance'})
 importances = importances.sort_values(by='Gini-Importance', ascending=False)
@@ -146,8 +156,8 @@ sns.barplot(x=importances['Gini-Importance'], y=importances['Features'], data=im
 plt.xlabel('Importance', fontsize=25, weight = 'bold')
 plt.ylabel('Features', fontsize=25, weight = 'bold')
 plt.title('Feature Importance', fontsize=25, weight = 'bold')
-display(plt.show())
-#display(importances)
+plt.show()
+# display(importances)
 
 
 
