@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import time
 
-%time df = pd.read_csv("../data/final_project.csv", sep=",", header=0)
+%time df = pd.read_csv("../Data/final_project.csv", sep=",", header=0)
 
 #Check ze rows
 print(len(df))
@@ -79,14 +79,14 @@ y = df['y']
 # Adding in a random noise componenet to test feature importance
 X['Random'] = np.random.random(size=len(X))
 
-# # Splitting the data
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, stratify=y, random_state = 42)
+# Splitting the data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, stratify=y, random_state = 42)
 
-# print("\nChecking shape of test/train data")
-# print(X_train.shape)
-# print(X_test.shape)
-# print(y_train.shape)
-# print(y_test.shape)
+print("\nChecking shape of test/train data")
+print(X_train.shape)
+print(X_test.shape)
+print(y_train.shape)
+print(y_test.shape)
 
 
 
@@ -94,8 +94,8 @@ X['Random'] = np.random.random(size=len(X))
 
 #Scaling Data and prepping for RF and PCA
 
-X1 = X.copy()
-y1 = y.copy()
+df_pca = X_train.copy()
+y = y_train.copy()
 
 # Drop vars
 cat_var = ['day','month','continent']
@@ -105,13 +105,13 @@ cat_var = ['day','month','continent']
 
 
 # Dropping from xtrain and xtest
-X1 = X1.drop(cat_var, axis=1)
-# X_test_sc = X_test.drop(cat_var, axis=1)
+X = df_pca.drop(cat_var, axis=1)
+X_test_sc = X_test.drop(cat_var, axis=1)
 
 scaler = StandardScaler()
-X1_sc = scaler.fit_transform(X1)
-# X_test_sc = scaler.transform(X_test_sc)
-y1 = np.array(y1)
+X_train_sc = scaler.fit_transform(X)
+X_test_sc = scaler.transform(X_test_sc)
+y_train = np.array(y_train)
 
 #Setting up loss function
 def custom_loss(y_true, y_pred):
@@ -126,23 +126,25 @@ def custom_loss(y_true, y_pred):
 # Baseline RF
 
 #Fit the model
-rfc_1 = RandomForestClassifier(n_estimators = 300, n_jobs = -1)
-%time rfc_1.fit(X1_sc, y1)
+rfc_1 = RandomForestClassifier()
+%time rfc_1.fit(X_train_sc, y_train)
 # display(rfc_1.score(X_train_sc, y_train))
 # Get predictions
-y_pred = rfc_1.predict(X1_sc)
+y_pred = rfc_1.predict(X_test_sc)
 
 #Custom Loss Function
 slater_loss = make_scorer(custom_loss, greater_is_better=True)
-rfc_1_score = cross_val_score(rfc_1, X1_sc, y_pred, cv=5, scoring = slater_loss, n_jobs=-1, verbose=1)
-rfc_1_cf = confusion_matrix(y1,y_pred)
+rfc_1_score = cross_val_score(rfc_1, X_test_sc, y_pred, cv=5, scoring = slater_loss)
+rfc_1_cf = confusion_matrix(y,y_pred)
+
+
 print("Baseline Random Forrest:")
-print("Confusion Matrix:",rfc_1_cf )
+print("Confusion Matrix:",rfc_1_cf)
 print("Custom Cross Validation Score:\n", rfc_1_score)
 
 #%%
 feats = {}
-for feature, importance in zip(X1_sc.columns, rfc_1.feature_importances_):
+for feature, importance in zip(X.columns, rfc_1.feature_importances_):
     feats[feature] = importance
 importances = pd.DataFrame.from_dict(feats, orient='index').rename(columns={0: 'Gini-Importance'})
 importances = importances.sort_values(by='Gini-Importance', ascending=False)
