@@ -1,6 +1,6 @@
 #%%
 from sklearn.metrics import mean_squared_error, r2_score, recall_score, confusion_matrix
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
@@ -110,7 +110,8 @@ y_train = np.array(y_train)
 
 rfc_1 = RandomForestClassifier()
 %time rfc_1.fit(X_train_sc, y_train)
-display(rfc_1.score(X_train_sc, y_train))
+# display(rfc_1.score(X_train_sc, y_train))
+rfc_1_score = cross_val_score(rfc_1, X_train_sc, y_train, cv=10)
 #%%
 feats = {}
 for feature, importance in zip(df.columns, rfc_1.feature_importances_):
@@ -159,7 +160,7 @@ X_test_sc_pca = pca.transform(X_test_sc)
 # Now rfc on the reduced data
 rfc_2 = RandomForestClassifier()
 %time rfc_2.fit(X_train_sc_pca, y_train)
-display(rfc_2.score(X_train_sc_pca, y_train))
+rfc_2_score = cross_val_score(rfc_2, X_train_sc_pca, y_train, cv=10)
 
 
 #%%
@@ -207,6 +208,7 @@ display(rfc_2.score(X_train_sc_pca, y_train))
 #%%
 # Predictions for each model
 y_pred = rfc_1.predict(X_test_sc)
+
 y_pred_pca = rfc_2.predict(X_test_sc_pca)
 # y_pred_rs = rs.best_estimator_.predict(X_test_sc_pca)
 
@@ -219,26 +221,27 @@ def custom_loss(y_true, y_pred):
     weight = np.array([[0, 10], [500, 0]])
     out = cm * weight
     return out.sum()
-slater_loss = make_scorer(custom_loss, greater_is_better=False)
 
+slater_loss_base_rf = custom_loss(y_test, y_pred)
+slater_loss_PCA_rf = custom_loss(y_test, y_pred_pca)
+
+
+print("Baseline Random Forrest:\n",slater_loss_base_rf)
+print("Cross Validation Score:\n", rfc_1_score)
+print("Random Forrest w PCA:\n",slater_loss_PCA_rf)
+print("Cross Validation Score:\n", rfc_2_score)
 #Looking at confusion matrix
 
-conf_M_base = pd.DataFrame(custom_loss(y_test, y_pred),
-							index = ['Actual 0','Actual 1'],
-							columns = ['Predicted 0','Predicted 1'])
+# conf_M_base = pd.DataFrame(confusion_matrix(y_test, y_pred),
+# 							index = ['Actual 0','Actual 1'],
+# 							columns = ['Predicted 0','Predicted 1'])
 
-conf_M_w_pca = pd.DataFrame(custom_loss(y_test, y_pred_pca),
-							index = ['Actual 0','Actual 1'],
-							columns = ['Predicted 0','Predicted 1'])
+# conf_M_w_pca = pd.DataFrame(confusion_matrix(y_test, y_pred_pca),
+# 							index = ['Actual 0','Actual 1'],
+# 							columns = ['Predicted 0','Predicted 1'])
 
 # conf_M_base = pd.DataFrame(confusion_matrix(y_test,y_pred_rs),
 # 							index = ['Actual 0','Actual 1'],
 # 							columns = ['Predicted 0','Predicted 1'])
-
-print("Baseline Random Forrest:\n",conf_M_base)
-print()
-print("Random Forrest w PCA:\n",conf_M_w_pca)
-
-
 
 # %%
