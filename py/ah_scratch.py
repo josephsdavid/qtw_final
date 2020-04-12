@@ -125,7 +125,7 @@ y_pred = rfc_1.predict(X_test_sc)
 #Custom Loss Function
 slater_loss = make_scorer(custom_loss, greater_is_better=False)
 
-rfc_1_score = cross_val_score(rfc_1, X_train_sc, y_train, cv=10, scoring = slater_loss)
+rfc_1_score = cross_val_score(rfc_1, X_train_sc, y_train, cv=5, scoring = slater_loss)
 
 
 #%%
@@ -179,7 +179,7 @@ rfc_2 = RandomForestClassifier()
 
 y_pred_pca = rfc_2.predict(X_test_sc_pca)
 slater_loss= make_scorer(custom_loss, greater_is_better=False)
-rfc_2_score = cross_val_score(rfc_2, X_train_sc_pca, y_train, cv=10, scoring=slater_loss)
+rfc_2_score = cross_val_score(rfc_2, X_train_sc_pca, y_train, cv=5, scoring=slater_loss)
 
 
 #%%
