@@ -179,8 +179,11 @@ print("\nThe explained variance is :\n {}".format(pca.explained_variance_))
 
 
 plt.plot(np.cumsum(pca.explained_variance_ratio_))
-plt.xlabel('number of components')
-plt.ylabel('cumulative explained variance')
+plt.title("PCA Analysis")
+plt.xlabel('number of components',fontsize=15)
+plt.ylabel('cumulative explained variance', fontsize=15)
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
 plt.axvline(linewidth=3, color='r', linestyle='--', x = 36, ymin=0)
 plt.axhline(y=0.95, xmin=0, color='r', linestyle='--')
 plt.show()
