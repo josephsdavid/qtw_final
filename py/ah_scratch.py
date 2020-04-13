@@ -146,10 +146,10 @@ rfc_1_score = cross_val_score(rfc_1, X_test_sc, y_pred, cv=5, scoring = slater_l
 rfc_1_cf = confusion_matrix(y_test,y_pred)
 
 print("Baseline Random Forrest:")
-print('Accuracy of Baseline RF: {:.2f}'.format(rfc_1_cf.score(X_train_sc, y1)*100),'%')
+print('Accuracy of Baseline RF: {:.2f}'.format(rfc_1.score(X_test_sc, y_test)*100),'%')
 print("Confusion Matrix:", rfc_1_cf)
 print("Custom Cross Validation Score:\n", rfc_1_score)
-print("Classification Report", classification_report(y1, y_pred))
+print("Classification Report", classification_report(y_test, y_pred))
 
 
 #%%
