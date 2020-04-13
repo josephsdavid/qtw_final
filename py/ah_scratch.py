@@ -107,7 +107,7 @@ drop_col = ['day','month','continent']
 # One hot encoding x32
 
 #Grouping Asias vs Other (europe and america) due to america's small class count
-#Maybenot
+
 
 # Dropping from xtrain and xtest
 X1 = X1.drop(drop_col, axis=1)
