@@ -108,6 +108,7 @@ drop_col = ['day','month','continent']
 
 #Grouping Asias vs Other (europe and america) due to america's small class count
 
+#
 
 # Dropping from xtrain and xtest
 X1 = X1.drop(drop_col, axis=1)
