@@ -65,17 +65,17 @@ for col in df.select_dtypes(include=['float64']).columns:
 #%%
 # EDA
 # Check numerical histograms of data
-df.hist(bins=50, figsize = (20,15))
+# df.hist(bins=50, figsize = (20,15))
 
 
-#%%
-# heatmap
-plt.figure(figsize=(20,10))
-sns.heatmap(df.corr().round(1),vmax=1, annot=True, cmap = 'YlGnBu',annot_kws={"fontsize":10})
+# #%%
+# # heatmap
+# plt.figure(figsize=(20,10))
+# sns.heatmap(df.corr().round(1),vmax=1, annot=True, cmap = 'YlGnBu',annot_kws={"fontsize":10})
 
-#%%
+# #%%
 
-df_num = df.select_dtypes(include=['float64','int64'])
+# df_num = df.select_dtypes(include=['float64','int64'])
 
 #%%
 X = df.drop('y', axis = 1)
@@ -144,7 +144,7 @@ rfc_1_score = cross_val_score(rfc_1, X_train_sc, y_pred, cv=5, scoring = slater_
 rfc_1_cf = confusion_matrix(y1,y_pred)
 
 print("Baseline Random Forrest:")
-print("Confusion Matrix:",rfc_1_cf )
+print("Confusion Matrix:", rfc_1_cf)
 print("Custom Cross Validation Score:\n", rfc_1_score)
 
 #%%
@@ -197,17 +197,22 @@ X_test_sc_pca = pca.transform(X_test_sc)
 
 # Now rfc on the reduced data
 rfc_2 = RandomForestClassifier()
-%time rfc_2.fit(X_train_sc_pca, y_train)
+%time rfc_2.fit(X_train_sc_pca, y1)
 
 y_pred_pca = rfc_2.predict(X_test_sc_pca)
 
 # Custom Loss function
 slater_loss= make_scorer(custom_loss, greater_is_better=True)
+
+rfc_2_cf = confusion_matrix(y1, y_pred_pca)
 rfc_2_score = cross_val_score(rfc_2, X_test_sc_pca, y_pred_pca, cv=5, scoring=slater_loss)
 
-print("\nRandom Forrest w PCA:")
-print("Custom Cross Validation Score:\n", rfc_2_score)
-print("Classification Report", )
+
+# print("Confusion Matrix:\n",rfc_2_cf )
+# print("\nRandom Forest w PCA:")
+# print("Custom Cross Validation Score:\n", rfc_2_score)
+# print("Classification Report", )
+
 
 #%%
 # # Randomized searchCV
