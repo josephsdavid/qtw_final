@@ -67,6 +67,7 @@ for col in df.select_dtypes(include=['float64']).columns:
 # Check numerical histograms of data
 df.hist(bins=50, figsize = (20,15))
 
+
 #%%
 # heatmap
 plt.figure(figsize=(20,10))
@@ -83,14 +84,14 @@ y = df['y']
 # Adding in a random noise componenet to test feature importance
 X['Random'] = np.random.random(size=len(X))
 
-# # Splitting the data
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, stratify=y, random_state = 42)
+# Splitting the data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, stratify=y, random_state = 42)
 
-# print("\nChecking shape of test/train data")
-# print(X_train.shape)
-# print(X_test.shape)
-# print(y_train.shape)
-# print(y_test.shape)
+print("\nChecking shape of test/train data")
+print(X_train.shape)
+print(X_test.shape)
+print(y_train.shape)
+print(y_test.shape)
 
 
 
@@ -98,8 +99,8 @@ X['Random'] = np.random.random(size=len(X))
 
 #Scaling Data and prepping for RF and PCA
 
-X1 = X.copy()
-y1 = y.copy()
+X1 = X_train.copy()
+y1 = y_train.copy()
 
 # Drop vars
 drop_col = ['day','month','continent']
@@ -110,11 +111,11 @@ drop_col = ['day','month','continent']
 
 # Dropping from xtrain and xtest
 X1 = X1.drop(drop_col, axis=1)
-# X_test_sc = X_test.drop(drop_col, axis=1)
+X_test_sc = X_test.drop(drop_col, axis=1)
 
 scaler = StandardScaler()
-X1_sc = scaler.fit_transform(X1)
-# X_test_sc = scaler.transform(X_test_sc)
+X_train_sc = scaler.fit_transform(X1)
+X_test_sc = scaler.transform(X_test_sc)
 y1 = np.array(y1)
 
 #Setting up loss function
@@ -131,22 +132,23 @@ def custom_loss(y_true, y_pred):
 
 #Fit the model
 rfc_1 = RandomForestClassifier(n_estimators = 300, n_jobs = -1)
-%time rfc_1.fit(X1_sc, y1)
+%time rfc_1.fit(X_train_sc, y1)
 # display(rfc_1.score(X_train_sc, y_train))
 # Get predictions
-y_pred = rfc_1.predict(X1_sc)
+y_pred = rfc_1.predict(X_train_sc)
 
 #Custom Loss Function
 slater_loss = make_scorer(custom_loss, greater_is_better=True)
-rfc_1_score = cross_val_score(rfc_1, X1_sc, y_pred, cv=5, scoring = slater_loss, n_jobs=-1, verbose=1)
+rfc_1_score = cross_val_score(rfc_1, X_train_sc, y_pred, cv=5, scoring = slater_loss, n_jobs=-1, verbose=1)
 rfc_1_cf = confusion_matrix(y1,y_pred)
+
 print("Baseline Random Forrest:")
 print("Confusion Matrix:",rfc_1_cf )
 print("Custom Cross Validation Score:\n", rfc_1_score)
 
 #%%
 feats = {}
-for feature, importance in zip(X1_sc.columns, rfc_1.feature_importances_):
+for feature, importance in zip(X1.columns, rfc_1.feature_importances_):
     feats[feature] = importance
 importances = pd.DataFrame.from_dict(feats, orient='index').rename(columns={0: 'Gini-Importance'})
 importances = importances.sort_values(by='Gini-Importance', ascending=False)
@@ -201,7 +203,7 @@ rfc_2_score = cross_val_score(rfc_2, X_test_sc_pca, y_pred_pca, cv=5, scoring=sl
 
 print("\nRandom Forrest w PCA:")
 print("Custom Cross Validation Score:\n", rfc_2_score)
-
+print("Classification Report", )
 
 #%%
 # # Randomized searchCV
@@ -279,3 +281,6 @@ print("Custom Cross Validation Score:\n", rfc_2_score)
 # 							columns = ['Predicted 0','Predicted 1'])
 
 # %%
+
+# Logistic Regression
+
