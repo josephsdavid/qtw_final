@@ -63,7 +63,7 @@ for col in df.select_dtypes(include=['float64']).columns:
 
 #%%
 #Check numerical histograms of data
-# df.hist(bins=50, figsize = (20,15))
+df.hist(bins=50, figsize = (20,15))
 
 # #%%
 
