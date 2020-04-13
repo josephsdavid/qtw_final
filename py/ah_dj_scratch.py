@@ -197,7 +197,7 @@ y.shape
 
 np.isnan(X).sum()
 
-
+X_pd = pd.DataFrame(X)
 
 fig, a = plt.subplots(7, 7)
 for idx, ax in enumerate(X):

@@ -58,19 +58,23 @@ df['month'] = df['month'].str.replace('Dev','Dec')
 df['month'] = df['month'].str.replace('sept.','Sep')
 df['day'] = df['day'].str.replace('thurday','thursday')
 
+#Fill NA's with the median
 for col in df.select_dtypes(include=['float64']).columns:
     df[col] = df[col].fillna(df[col].median())
 
 #%%
-#Check numerical histograms of data
-# df.hist(bins=50, figsize = (20,15))
+# EDA
+# Check numerical histograms of data
+df.hist(bins=50, figsize = (20,15))
 
-# #%%
+#%%
+# heatmap
+plt.figure(figsize=(20,10))
+sns.heatmap(df.corr().round(1),vmax=1, annot=True, cmap = 'YlGnBu',annot_kws={"fontsize":10})
 
-#heatmap
-# plt.figure(figsize=(20,10))
-# sns.heatmap(df.corr().round(1),vmax=1, annot=True, cmap = 'YlGnBu',annot_kws={"fontsize":10})
+#%%
 
+df_num = df.select_dtypes(include=['float64','int64'])
 
 #%%
 X = df.drop('y', axis = 1)
@@ -98,15 +102,15 @@ X1 = X.copy()
 y1 = y.copy()
 
 # Drop vars
-cat_var = ['day','month','continent']
+drop_col = ['day','month','continent']
 # One hot encoding x32
 
 #Grouping Asias vs Other (europe and america) due to america's small class count
 
 
 # Dropping from xtrain and xtest
-X1 = X1.drop(cat_var, axis=1)
-# X_test_sc = X_test.drop(cat_var, axis=1)
+X1 = X1.drop(drop_col, axis=1)
+# X_test_sc = X_test.drop(drop_col, axis=1)
 
 scaler = StandardScaler()
 X1_sc = scaler.fit_transform(X1)
@@ -118,7 +122,7 @@ def custom_loss(y_true, y_pred):
     cm = confusion_matrix(y_true, y_pred)
     weight = np.array([[0, 10], [500, 0]])
     out = cm * weight
-    return out.sum()
+    return out.sum()/cm.sum()
 
 
 #%%
