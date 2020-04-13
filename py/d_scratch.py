@@ -15,7 +15,7 @@ def custom_loss(y_true, y_pred):
     cm = confusion_matrix(y_true, y_pred)
     weight = np.array([[0, 10], [500, 0]])
     out = cm * weight
-    return out.sum()/cm.sum()
+    return out.sum()/cm.sum() #y_true.shape[0] 
 
 
 slater_loss = make_scorer(custom_loss, greater_is_better=False)
