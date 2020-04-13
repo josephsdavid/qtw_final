@@ -296,6 +296,8 @@ print("Classification Report", classification_report(y_test, y_pred_pca))
 # 							columns = ['Predicted 0','Predicted 1'])
 
 # %%
+# No Test train split LOGreg
+
 
 def custom_loss(y_true, y_pred):
     cm = confusion_matrix(y_true, y_pred)
@@ -319,17 +321,17 @@ X1 = X1.drop(drop_col, axis=1)
 
 #Scaling
 scaler = StandardScaler()
-X_train_sc = scaler.fit_transform(X1)
+X_sc = scaler.fit_transform(X1)
 y1 = np.array(y1)
 
 # Logistic Regression
 lr_1 = LogisticRegressionCV(penalty= 'l2')
-lr_1.fit(X_train_sc, y1)
-y_pred = lr_1.predict(X_train_sc)
+lr_1.fit(X_sc, y1)
+y_pred = lr_1.predict(X_sc)
 
-lr_confusion = confusion_matrix(y1,y_pred)
+lr_confusion = confusion_matrix(y1, y_pred)
 lr_1_score = cross_val_score(lr_1, 
-							X_train_sc, 
+							X_sc, 
 							y_pred,
 							cv=5, 
 							scoring = slater_loss, 
@@ -337,7 +339,7 @@ lr_1_score = cross_val_score(lr_1,
 							verbose=1)
 
 print("Baseline Logistic Regression:")
-print('Accuracy of Logistic Regression: {:.2f}'.format(lr_1.score(X_train_sc, y1)*100),'%')
+print('Accuracy of Logistic Regression: {:.2f}'.format(lr_1.score(X_sc, y1)*100),'%')
 print("Confusion Matrix:\n", lr_confusion)
 print("Custom Cross Validation Score:\n", lr_1_score)
 print("Classification Report", classification_report(y1, y_pred))
@@ -345,5 +347,64 @@ print("Classification Report", classification_report(y1, y_pred))
 
 
 # %%
+#Log reg with test/train
 
-#fuck fuck fuck
+#Reimporting the dat
+X = df.drop('y', axis = 1)
+y = df['y']
+
+# Splitting the data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, stratify=y, random_state = 42)
+
+X1 = X_train.copy()
+y1 = y_train.copy()
+
+
+# Drop vars
+drop_col = ['day','month','continent']
+
+# Dropping from xtrain and xtest
+X1_train = X1.drop(drop_col, axis=1)
+X1_test = X_test.drop(drop_col, axis=1)
+
+#Scaling
+scaler = StandardScaler()
+X1_train_sc = scaler.fit_transform(X1_train)
+X1_test_sc = scaler.transform(X1_test)
+
+y1 = np.array(y1)
+
+def custom_loss(y_true, y_pred):
+    cm = confusion_matrix(y_true, y_pred)
+    weight = np.array([[0, 10], [500, 0]])
+    out = cm * weight
+    return out.sum()/cm.sum()
+
+
+
+
+# Logistic Regression
+lr_1 = LogisticRegressionCV(penalty= 'l2')
+lr_1.fit(X1_train_sc, y1)
+y_pred = lr_1.predict(X1_test_sc)
+
+slater_loss = make_scorer(custom_loss, greater_is_better=True)
+lr_1_score = cross_val_score(lr_1, 
+							X1_test_sc, 
+							y_pred,
+							cv=5, 
+							scoring = slater_loss, 
+							n_jobs=-1, 
+							verbose=1)
+
+lr_confusion = confusion_matrix(y_test, y_pred)
+
+
+
+print("Baseline Logistic Regression:")
+print('Accuracy of Logistic Regression: {:.2f}'.format(lr_1.score(X1_test_sc, y_test)*100),'%')
+print("Confusion Matrix:\n", lr_confusion)
+print("Custom Cross Validation Score:\n", lr_1_score)
+print("Classification Report", classification_report(y_test, y_pred))
+
+# %%
