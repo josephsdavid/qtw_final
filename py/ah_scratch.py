@@ -1,10 +1,11 @@
 #%%
-from sklearn.metrics import mean_squared_error, r2_score, recall_score, confusion_matrix, make_scorer
+from sklearn.metrics import mean_squared_error, r2_score, recall_score, confusion_matrix, make_scorer,classification_report
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.decomposition import PCA
 import numpy as np
@@ -82,7 +83,7 @@ X = df.drop('y', axis = 1)
 y = df['y']
 
 # Adding in a random noise componenet to test feature importance
-X['Random'] = np.random.random(size=len(X))
+#X['Random'] = np.random.random(size=len(X))
 
 # Splitting the data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, stratify=y, random_state = 42)
@@ -136,16 +137,20 @@ rfc_1 = RandomForestClassifier(n_estimators = 300, n_jobs = -1)
 %time rfc_1.fit(X_train_sc, y1)
 # display(rfc_1.score(X_train_sc, y_train))
 # Get predictions
-y_pred = rfc_1.predict(X_train_sc)
+y_pred = rfc_1.predict(X_test_sc)
 
 #Custom Loss Function
 slater_loss = make_scorer(custom_loss, greater_is_better=True)
-rfc_1_score = cross_val_score(rfc_1, X_train_sc, y_pred, cv=5, scoring = slater_loss, n_jobs=-1, verbose=1)
-rfc_1_cf = confusion_matrix(y1,y_pred)
+rfc_1_score = cross_val_score(rfc_1, X_test_sc, y_pred, cv=5, scoring = slater_loss, n_jobs=-1, verbose=1)
+
+rfc_1_cf = confusion_matrix(y_test,y_pred)
 
 print("Baseline Random Forrest:")
+print('Accuracy of Baseline RF: {:.2f}'.format(rfc_1_cf.score(X_train_sc, y1)*100),'%')
 print("Confusion Matrix:", rfc_1_cf)
 print("Custom Cross Validation Score:\n", rfc_1_score)
+print("Classification Report", classification_report(y1, y_pred))
+
 
 #%%
 feats = {}
@@ -207,11 +212,12 @@ slater_loss= make_scorer(custom_loss, greater_is_better=True)
 rfc_2_cf = confusion_matrix(y1, y_pred_pca)
 rfc_2_score = cross_val_score(rfc_2, X_test_sc_pca, y_pred_pca, cv=5, scoring=slater_loss)
 
+print("\nRandom Forest w PCA:")
+print('Accuracy of RF w PCA: {:.2f}'.format(lr_1.score(X_train_sc, y1)*100),'%')
+print("Confusion Matrix:\n",rfc_2_cf )
+print("Custom Cross Validation Score:\n", rfc_2_score)
+print("Classification Report", classification_report(y1, y_pred_pca))
 
-# print("Confusion Matrix:\n",rfc_2_cf )
-# print("\nRandom Forest w PCA:")
-# print("Custom Cross Validation Score:\n", rfc_2_score)
-# print("Classification Report", )
 
 
 #%%
@@ -291,5 +297,52 @@ rfc_2_score = cross_val_score(rfc_2, X_test_sc_pca, y_pred_pca, cv=5, scoring=sl
 
 # %%
 
-# Logistic Regression
+def custom_loss(y_true, y_pred):
+    cm = confusion_matrix(y_true, y_pred)
+    weight = np.array([[0, 10], [500, 0]])
+    out = cm * weight
+    return out.sum()/cm.sum()
 
+slater_loss = make_scorer(custom_loss, greater_is_better=True)
+
+#Reimporting the dat
+X = df.drop('y', axis = 1)
+y = df['y']
+
+X1 = X.copy()
+y1 = y.copy()
+
+# Drop vars
+drop_col = ['day','month','continent']
+
+# Dropping from xtrain and xtest
+X1 = X1.drop(drop_col, axis=1)
+
+#Scaling
+scaler = StandardScaler()
+X_train_sc = scaler.fit_transform(X1)
+y1 = np.array(y1)
+
+# Logistic Regression
+lr_1 = LogisticRegressionCV(penalty= 'l2')
+lr_1.fit(X_train_sc, y1)
+y_pred = lr_1.predict(X_train_sc)
+
+lr_confusion = confusion_matrix(y1,y_pred)
+lr_1_score = cross_val_score(lr_1, 
+							X_train_sc, 
+							y_pred,
+							cv=5, 
+							scoring = slater_loss, 
+							n_jobs=-1, 
+							verbose=1)
+
+print("Baseline Logistic Regression:")
+print('Accuracy of Logistic Regression: {:.2f}'.format(lr_1.score(X_train_sc, y1)*100),'%')
+print("Confusion Matrix:\n", lr_confusion)
+print("Custom Cross Validation Score:\n", lr_1_score)
+print("Classification Report", classification_report(y1, y_pred))
+
+
+
+# %%

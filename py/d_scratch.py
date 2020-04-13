@@ -206,9 +206,8 @@ rfc_1_score = cross_val_score(
 print(rfc_1_score)
 
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.20, stratify=y, random_state=42
-)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, stratify=y, random_state=42)
+
 rf = RandomForestClassifier(n_estimators=300, n_jobs=-1, verbose=2)
 rf.fit(X_train, y_train)
 ppp = rf.predict(X_test)
