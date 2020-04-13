@@ -201,7 +201,7 @@ X_train_sc_pca = pca.transform(X_train_sc)
 X_test_sc_pca = pca.transform(X_test_sc)
 
 # Now rfc on the reduced data
-rfc_2 = RandomForestClassifier()
+rfc_2 = RandomForestClassifier(n_estimators=300, n_jobs=-1, verbose=2)
 %time rfc_2.fit(X_train_sc_pca, y1)
 
 y_pred_pca = rfc_2.predict(X_test_sc_pca)
@@ -209,14 +209,14 @@ y_pred_pca = rfc_2.predict(X_test_sc_pca)
 # Custom Loss function
 slater_loss= make_scorer(custom_loss, greater_is_better=True)
 
-rfc_2_cf = confusion_matrix(y1, y_pred_pca)
+rfc_2_cf = confusion_matrix(y_test, y_pred_pca)
 rfc_2_score = cross_val_score(rfc_2, X_test_sc_pca, y_pred_pca, cv=5, scoring=slater_loss)
 
 print("\nRandom Forest w PCA:")
-print('Accuracy of RF w PCA: {:.2f}'.format(lr_1.score(X_train_sc, y1)*100),'%')
+print('Accuracy of RF w PCA: {:.2f}'.format(rfc_2.score(X_test_sc_pca, y_test)*100),'%')
 print("Confusion Matrix:\n",rfc_2_cf )
 print("Custom Cross Validation Score:\n", rfc_2_score)
-print("Classification Report", classification_report(y1, y_pred_pca))
+print("Classification Report", classification_report(y_test, y_pred_pca))
 
 
 
@@ -308,7 +308,6 @@ slater_loss = make_scorer(custom_loss, greater_is_better=True)
 #Reimporting the dat
 X = df.drop('y', axis = 1)
 y = df['y']
-
 X1 = X.copy()
 y1 = y.copy()
 
@@ -346,3 +345,5 @@ print("Classification Report", classification_report(y1, y_pred))
 
 
 # %%
+
+#fuck fuck fuck
