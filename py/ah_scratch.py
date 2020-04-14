@@ -65,6 +65,21 @@ for col in df.select_dtypes(include=['float64']).columns:
 
 #%%
 # EDA
+
+table=pd.crosstab(df['day'],df['y'])
+table.div(table.sum(1).astype(float), axis=0).plot(kind='bar', stacked=True)
+plt.title('Frequency of Target vs day of the week')
+plt.xlabel('Day')
+plt.ylabel('Frequency')
+
+table=pd.crosstab(df['month'],df['y'])
+table.div(table.sum(1).astype(float), axis=0).plot(kind='bar', stacked=True)
+plt.title('Frequency of Target vs month')
+plt.xlabel('Month')
+plt.ylabel('Frequency')
+
+
+
 # Check numerical histograms of data
 # df.hist(bins=50, figsize = (20,15))
 
@@ -219,8 +234,6 @@ print("Custom Cross Validation Score:\n", rfc_2_score)
 print("Classification Report", classification_report(y_test, y_pred_pca))
 
 
-
-
 #%%
 # # Randomized searchCV
 # np.random.seed(42)	
@@ -362,10 +375,10 @@ y1_train = y_train.copy()
 
 
 # Drop vars
-drop_col = ['day','month','continent']
+drop_col = ['day','month','continent', 'x2','x41']
 
 # Dropping from xtrain and xtest
-X1_train = X1.drop(drop_col, axis=1)
+X1_train = X1_train.drop(drop_col, axis=1)
 X1_test = X_test.drop(drop_col, axis=1)
 
 #Scaling
@@ -407,3 +420,4 @@ print("Classification Report", classification_report(y_test, y_pred))
 
 # %%
 
+# fuck
