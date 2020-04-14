@@ -148,6 +148,20 @@ y = x.pop("y")
 
 # categorical variables with continent asia or not (doesnt matter bc continent
 # is a shitty featyre)
+def categorize_with_asia(d: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    d = d.copy()
+    continent = "x24"
+    asia = Counter(d[continent]).most_common(1)[0][0]
+    d[continent] = np.array([1.0 if x == asia else 0.0 for x in d[continent]])
+    perc = "x32"
+    n_percs = np.unique(d[perc]).shape[0]
+    enum_dict = dict(zip(np.unique(d[perc]), range(np.unique(d[perc]).shape[0])))
+    enum_percs = np.array([enum_dict[x] for x in d[perc]])
+    d[perc] = np.eye(n_percs)[enum_percs]
+    to_drop = ["x2", "x41", "x29", "x30"]
+    for k in to_drop:
+        d.pop(k, None)
+    return d
 
 
 x_encoded = categorize_with_asia(x)
