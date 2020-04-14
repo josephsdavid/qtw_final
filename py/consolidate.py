@@ -18,10 +18,10 @@ def custom_loss(y_true, y_pred):
 
 slater_loss = make_scorer(custom_loss, greater_is_better=False)
 
-'''
+"""
 data loading
 First we define some helper functions
-'''
+"""
 
 
 def load_data(path):
@@ -59,6 +59,7 @@ def cleanup(d: Dict[str, str]) -> Dict[str, np.ndarray]:
             res[k] = np.array(v)
     return res
 
+
 def convert_dollars_percs(x: np.ndarray) -> np.ndarray:
     """replace dollar signs and percentages, as well as rogue negative signs"""
     out = [
@@ -67,7 +68,6 @@ def convert_dollars_percs(x: np.ndarray) -> np.ndarray:
     ]
     out = np.array([float(z) if _test_value(z) else np.nan for z in out])
     return out
-
 
 
 def impute_cats(
@@ -80,7 +80,6 @@ def impute_cats(
     for k in c.keys():
         d[k][np.isnan(d[k])] = c[k].most_common(1)[0][0]
     return d
-
 
 
 def load_dataset(path: str) -> Dict[str, np.ndarray]:
@@ -127,9 +126,9 @@ def load_dataset(path: str) -> Dict[str, np.ndarray]:
 
 def cyclical(x, period):
     # http://blog.davidkaleko.com/feature-engineering-cyclical-features.html
-    '''
+    """
     sine cosine transformation for days and months
-    '''
+    """
     s = np.sin(x * (2.0 * np.pi / period))
     c = np.cos(x * (2.0 * np.pi / period))
     return s, c
@@ -171,24 +170,24 @@ rfc_1_score = cross_val_score(
 print(rfc_1_score)
 
 
-
 # happy matrix
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, stratify=y, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.20, stratify=y, random_state=42
+)
 rf = RandomForestClassifier(n_estimators=300, n_jobs=-1, verbose=2)
 rf.fit(X_train, y_train)
 ppp = rf.predict(X_test)
 print(confusion_matrix(y_test, ppp))
 
 
-
 def permutation_importances(rf, X_train, y_train, metric):
     baseline = metric(rf, X_train, y_train)
     imp = []
     for i in range(X_train.shape[1]):
-        save = X_train[:,i].copy()
-        X_train[:,i] = np.random.permutation(X_train[:,i])
+        save = X_train[:, i].copy()
+        X_train[:, i] = np.random.permutation(X_train[:, i])
         m = metric(rf, X_train, y_train)
-        X_train[:,i] = save
+        X_train[:, i] = save
         imp.append(baseline - m)
     return np.array(imp)
 
@@ -203,7 +202,7 @@ plt.show()
 keep_vars = [i for i in range(imps.shape[0]) if imps[i] > imps.mean()]
 
 
-X_small = X[:,keep_vars].copy()
+X_small = X[:, keep_vars].copy()
 
 
 rfc_s = RandomForestClassifier(n_estimators=300, n_jobs=-1, verbose=2)
@@ -217,12 +216,24 @@ print(rfc_s_score)
 
 rfc_s_scaled = RandomForestClassifier(n_estimators=300, n_jobs=-1, verbose=2)
 rfc_ss_score = cross_val_score(
-    rfc_s_scaled, StandardScaler().fit_transform(X_small), y, cv=5, scoring=slater_loss, n_jobs=-1, verbose=1
+    rfc_s_scaled,
+    StandardScaler().fit_transform(X_small),
+    y,
+    cv=5,
+    scoring=slater_loss,
+    n_jobs=-1,
+    verbose=1,
 )
 print(rfc_ss_score)
 
 rfc_scaled = RandomForestClassifier(n_estimators=300, n_jobs=-1, verbose=2)
 rfc_scale_score = cross_val_score(
-    rfc_scaled, StandardScaler().fit_transform(X), y, cv=5, scoring=slater_loss, n_jobs=-1, verbose=1
+    rfc_scaled,
+    StandardScaler().fit_transform(X),
+    y,
+    cv=5,
+    scoring=slater_loss,
+    n_jobs=-1,
+    verbose=1,
 )
 print(rfc_scale_score)
