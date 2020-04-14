@@ -309,56 +309,6 @@ print("Classification Report", classification_report(y_test, y_pred_pca))
 # 							index = ['Actual 0','Actual 1'],
 # 							columns = ['Predicted 0','Predicted 1'])
 
-# %%
-# No Test train split LOGreg
-
-
-def custom_loss(y_true, y_pred):
-    cm = confusion_matrix(y_true, y_pred)
-    weight = np.array([[0, 10], [500, 0]])
-    out = cm * weight
-    return out.sum()/cm.sum()
-
-slater_loss = make_scorer(custom_loss, greater_is_better=True)
-
-#Reimporting the dat
-X = df.drop('y', axis = 1)
-y = df['y']
-X1 = X.copy()
-y1 = y.copy()
-
-# Drop vars
-drop_col = ['day','month','continent']
-
-# Dropping from xtrain and xtest
-X1 = X1.drop(drop_col, axis=1)
-
-#Scaling
-scaler = StandardScaler()
-X_sc = scaler.fit_transform(X1)
-y1 = np.array(y1)
-
-# Logistic Regression
-lr_1 = LogisticRegressionCV(penalty= 'l2')
-lr_1.fit(X_sc, y1)
-y_pred = lr_1.predict(X_sc)
-
-lr_confusion = confusion_matrix(y1, y_pred)
-lr_1_score = cross_val_score(lr_1, 
-							X_sc, 
-							y_pred,
-							cv=5, 
-							scoring = slater_loss, 
-							n_jobs=-1, 
-							verbose=1)
-
-print("Baseline Logistic Regression:")
-print('Accuracy of Logistic Regression: {:.2f}'.format(lr_1.score(X_sc, y1)*100),'%')
-print("Confusion Matrix:\n", lr_confusion)
-print("Custom Cross Validation Score:\n", lr_1_score)
-print("Classification Report", classification_report(y1, y_pred))
-
-
 
 # %%
 #Log reg with test/train
@@ -401,8 +351,8 @@ y_pred = lr_1.predict(X1_test_sc)
 
 slater_loss = make_scorer(custom_loss, greater_is_better=True)
 lr_1_score = cross_val_score(lr_1, 
-							X1_test_sc, 
-							y_pred,
+							X1_train_sc, 
+							y1_train,
 							cv=5, 
 							scoring = slater_loss, 
 							n_jobs=-1, 
@@ -418,6 +368,12 @@ print("Confusion Matrix:\n", lr_confusion)
 print("Custom Cross Validation Score:\n", lr_1_score)
 print("Classification Report", classification_report(y_test, y_pred))
 
-# %%
+#fuck
+# ehh work
 
-# fuck
+
+
+
+#WORK GIT
+
+
