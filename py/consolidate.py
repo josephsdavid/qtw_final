@@ -499,3 +499,8 @@ print('Accuracy of Logistic Regression: {:.2f}'.format(lr_1.score(X1_test_sc, y_
 print("Confusion Matrix:\n", lr_confusion)
 print("Custom Cross Validation Score:\n", lr_1_score)
 print("Classification Report", classification_report(y_test, y_pred))
+
+
+
+
+# $ jupyter nbconvert CaseStudy15.ipynb --to html --output CaseStudy15_DS7333_QTW.html
