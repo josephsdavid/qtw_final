@@ -368,4 +368,5 @@ print("Confusion Matrix:\n", lr_confusion)
 print("Custom Cross Validation Score:\n", lr_1_score)
 print("Classification Report", classification_report(y_test, y_pred))
 
-#fuck
+
+#shit
