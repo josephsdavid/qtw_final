@@ -104,7 +104,7 @@ X1 = X_train.copy()
 y1 = y_train.copy()
 
 # Drop vars
-drop_col = ['day','month','continent']
+drop_col = ['day','month','continent', 'x2','x41']
 # One hot encoding x32
 
 #Grouping Asias vs Other (europe and america) due to america's small class count
