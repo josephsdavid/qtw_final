@@ -317,7 +317,7 @@ df['day'] = df['day'].str.replace('thurday','thursday')
 
 #Fill NA's with the median
 for col in df.select_dtypes(include=['float64']).columns:
-    df[col] = df[col].fillna(df[col].median())
+    df[col] = df[col].fillna(df[col].mean())
 
 #%%
 # EDA
@@ -805,29 +805,6 @@ ppp = rf.predict(X_test)
 
 print(confusion_matrix(y_test, ppp))
 
-
-#
-#
-#
-# print({k:np.unique(v).shape[0] for k, v in x.items() if np.unique(v).shape[0] <=50})
-#
-# Counter(x['x24'])
-#
-#
-#
-#
-#
-# cat_cols = ['x2','x41','x29','x30']
-#
-# df = pd.DataFrame(x)
-# df = df.drop(['x2','x41','x29','x30'], axis=1)
-#
-# plot_corr(df, plot_path='corr_matrix_processed',fig_size=(40,35))
-#
-#
-# custom_loss(y_true = np.array([1,0,1,0,1,0]), y_pred = np.array([1,1,1,0,0,0]))
-#
-# Counter(y)
 
 def permutation_importances(rf, X_train, y_train, metric):
     baseline = metric(rf, X_train, y_train)
