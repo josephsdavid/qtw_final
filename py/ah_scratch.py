@@ -5,7 +5,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegressionCV
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.decomposition import PCA
 import numpy as np
@@ -145,7 +145,7 @@ rfc_1_score = cross_val_score(rfc_1, X_test_sc, y_pred, cv=5, scoring = slater_l
 
 rfc_1_cf = confusion_matrix(y_test,y_pred)
 
-print("Baseline Random Forrest:")
+print("Baseline Random Forest:")
 print('Accuracy of Baseline RF: {:.2f}'.format(rfc_1.score(X_test_sc, y_test)*100),'%')
 print("Confusion Matrix:", rfc_1_cf)
 print("Custom Cross Validation Score:\n", rfc_1_score)
@@ -277,9 +277,9 @@ print("Classification Report", classification_report(y_test, y_pred_pca))
 
 
 
-# print("Baseline Random Forrest:")
+# print("Baseline Random Forest:")
 # print("Custom Cross Validation Score:\n", rfc_1_score)
-# print("\nRandom Forrest w PCA:")
+# print("\nRandom Forest w PCA:")
 # print("Custom Cross Validation Score:\n", rfc_2_score)
 #Looking at confusion matrix
 
@@ -356,8 +356,8 @@ y = df['y']
 # Splitting the data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, stratify=y, random_state = 42)
 
-X1 = X_train.copy()
-y1 = y_train.copy()
+X1_train = X_train.copy()
+y1_train = y_train.copy()
 
 
 # Drop vars
@@ -371,8 +371,7 @@ X1_test = X_test.drop(drop_col, axis=1)
 scaler = StandardScaler()
 X1_train_sc = scaler.fit_transform(X1_train)
 X1_test_sc = scaler.transform(X1_test)
-
-y1 = np.array(y1)
+y1_train = np.array(y1_train)
 
 def custom_loss(y_true, y_pred):
     cm = confusion_matrix(y_true, y_pred)
@@ -381,11 +380,9 @@ def custom_loss(y_true, y_pred):
     return out.sum()/cm.sum()
 
 
-
-
 # Logistic Regression
-lr_1 = LogisticRegressionCV(penalty= 'l2')
-lr_1.fit(X1_train_sc, y1)
+lr_1 = LogisticRegression()
+lr_1.fit(X1_train_sc, y1_train)
 y_pred = lr_1.predict(X1_test_sc)
 
 slater_loss = make_scorer(custom_loss, greater_is_better=True)
@@ -408,3 +405,4 @@ print("Custom Cross Validation Score:\n", lr_1_score)
 print("Classification Report", classification_report(y_test, y_pred))
 
 # %%
+
