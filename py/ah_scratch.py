@@ -220,6 +220,7 @@ print("Classification Report", classification_report(y_test, y_pred_pca))
 
 
 
+
 #%%
 # # Randomized searchCV
 # np.random.seed(42)	
