@@ -371,7 +371,4 @@ print("Classification Report", classification_report(y_test, y_pred))
 #fuck
 # ehh work
 
-
-#pleasework
-
-
+#fuckyou
