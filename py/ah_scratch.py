@@ -395,7 +395,7 @@ def custom_loss(y_true, y_pred):
 
 
 # Logistic Regression
-lr_1 = LogisticRegression()
+lr_1 = LogisticRegression(penalty='l2')
 lr_1.fit(X1_train_sc, y1_train)
 y_pred = lr_1.predict(X1_test_sc)
 
